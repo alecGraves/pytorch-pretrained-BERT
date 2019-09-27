@@ -422,7 +422,7 @@ class PreTrainedBertModel(nn.Module):
     """
     def __init__(self, config, *inputs, **kwargs):
         super(PreTrainedBertModel, self).__init__()
-        if not isinstance(config, BertConfig):
+        if not isinstance(config, BertConfig) and config is not None:
             raise ValueError(
                 "Parameter config in `{}(config)` should be an instance of class `BertConfig`. "
                 "To create a model from a Google pretrained model use "
@@ -948,8 +948,16 @@ class BertForMultipleChoice(PreTrainedBertModel):
 
     def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None):
         flat_input_ids = input_ids.view(-1, input_ids.size(-1))
-        flat_token_type_ids = token_type_ids.view(-1, token_type_ids.size(-1))
-        flat_attention_mask = attention_mask.view(-1, attention_mask.size(-1))
+        
+        if token_type_ids is None:
+            flat_token_type_ids = None
+        else:
+            flat_token_type_ids = token_type_ids.view(-1, token_type_ids.size(-1))
+
+        if attention_mask is None:
+            flat_attention_mask = None
+        else:
+            flat_attention_mask = attention_mask.view(-1, attention_mask.size(-1))
         _, pooled_output = self.bert(flat_input_ids, flat_token_type_ids, flat_attention_mask, output_all_encoded_layers=False)
         pooled_output = self.dropout(pooled_output)
         logits = self.classifier(pooled_output)
